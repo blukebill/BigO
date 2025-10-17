@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
-#include <sys.types.h>
+#include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
@@ -26,12 +26,11 @@ static int starts_with(const char *s, const char *pfx) {
 }
 
 static void trim_crlf(char *s) {
-	if(!s) return;
-	for(size_t i = strlen(s); i < 0; i--) {
-		char c = s[i-1];
-		if(c == '\r' || c == '\n') s[i-1] = '\0';
-		else break;
-	}
+    if (!s) return;
+    size_t len = strlen(s);
+    while (len > 0 && (s[len-1] == '\r' || s[len-1] == '\n')) {
+        s[--len] = '\0';
+    }
 }
 
 http_server http_listen(int port) {
@@ -130,67 +129,99 @@ static void write_response(int fd, http_response *res) {
 }
 
 static void handle_client(int cfd) {
-	char line[4096];
-	char method[8] = {0};
-	char path[64] = {0};
+    char line[4096];
+    char method[8] = {0};
+    char path[64]  = {0};
+    char httpver[16] = {0};
 
-	if (recv_line(cfd, line, sizeof(line)) <= 0) { close(cfd); return; }
-	trim_crlf(line);
-
-	{
-		char httpver[16];
-		if(sscanf(line, "%7s %63s %15", method, path, httpver) != 3) {
-			close(cfd);
-			return;
-		}
-	}
-
-	size+t content_length = 0;
-	for (;;) {
-		int n = recv_line(cfd, line, sizeof(line));
-		if(n<= 0) { close(cfd); return; }
-		trim_crlf(line);
-		if(line[0] == '\0') break;
-		if(starts_with(line, "Content-Length:")) {
-			const char *p = line + strlen("Content-Length:");
-			while (isspace((unsigned char)*p)) p++;
-			content_length = (size_t_strtoul(p, NULL, 10);
-					}
-		}
-
-	char *body = NULL;
-  if (content_length > 0) {
-    body = (char*)malloc(content_length + 1);
-    if (!body) { close(cfd); return; }
-    size_t got = 0;
-    while (got < content_length) {
-      ssize_t k = recv(cfd, body + got, content_length - got, 0);
-      if (k <= 0) { free(body); close(cfd); return; }
-      got += (size_t)k;
+    // request line
+    if (recv_line(cfd, line, sizeof(line)) <= 0) {
+        close(cfd);
+        return;
     }
-    body[content_length] = '\0';
-  }
+    trim_crlf(line);
 
-  http_request req = {0};
-  snprintf(req.method, sizeof(req.method), "%s", method);
-  snprintf(req.path, sizeof(req.path), "%s", path);
-  req.body = body;
-  req.body_len = content_length;
+    if (sscanf(line, "%7s %63s %15s", method, path, httpver) != 3) {
+        // malformed request line
+        http_response bad = http_text(400, "Bad Request");
+        write_response(cfd, &bad);
+        http_response_free(&bad);
+        close(cfd);
+        return;
+    }
+    fprintf(stderr, "[http] %s %s %s\n", method, path, httpver);
 
-  http_response res;
-  route_handler h = find_route(req.method, req.path);
-  if (h) {
-    res = h(&req);
-  } else {
-    const char *msg = "{\"error\":\"not found\"}";
-    res = http_json(404, msg);
-  }
+    // headers
+size_t content_length = 0;
+int header_lines = 0;
 
-  write_response(cfd, &res);
-  http_response_free(&res);
-  http_request_free(&req);
-  close(cfd);
+for (;;) {
+    int n = recv_line(cfd, line, sizeof(line));
+    if (n <= 0) {
+        // client closed or error
+        close(cfd);
+        return;
+    }
+    trim_crlf(line);
+
+    // debug: show each header as parsed
+    fprintf(stderr, "[http] header: \"%s\"\n", line);
+
+    if (line[0] == '\0') {
+        // blank line -> end of headers
+        break;
+    }
+
+    if (starts_with(line, "Content-Length:")) {
+        const char *p = line + strlen("Content-Length:");
+        while (*p == ' ' || *p == '\t') p++;
+        content_length = (size_t)strtoul(p, NULL, 10);
+    }
+
+    // don't loop forever if blank line never arrives
+    if (++header_lines > 200) {
+        http_response bad = http_text(400, "Bad Request: header too long");
+        write_response(cfd, &bad);
+        http_response_free(&bad);
+        close(cfd);
+        return;
+    }
 }
+
+
+    // body (only if content-length > 0, e.g., POST /parse)
+    char *body = NULL;
+    if (content_length > 0) {
+        body = (char*)malloc(content_length + 1);
+        if (!body) { close(cfd); return; }
+        size_t got = 0;
+        while (got < content_length) {
+            ssize_t k = recv(cfd, body + got, content_length - got, 0);
+            if (k <= 0) { free(body); close(cfd); return; }
+            got += (size_t)k;
+        }
+        body[content_length] = '\0';
+    }
+
+    http_request req = {0};
+    snprintf(req.method, sizeof(req.method), "%s", method);
+    snprintf(req.path,   sizeof(req.path),   "%s", path);
+    req.body = body;
+    req.body_len = content_length;
+
+    // route dispatch
+    http_response res;
+    route_handler h = find_route(req.method, req.path);
+    if (h) res = h(&req);
+    else   res = http_json(404, "{\"error\":\"not found\"}");
+
+    // send response
+    write_response(cfd, &res);
+    http_response_free(&res);
+    http_request_free(&req);
+    close(cfd);
+}
+
 
 void http_serve(http_server *srv) {
   if (!srv || srv->server_fd < 0) return;

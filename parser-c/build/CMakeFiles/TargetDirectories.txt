@@ -1,0 +1,5 @@
+/home/augur/BigO/parser-c/build/CMakeFiles/tree-sitter.dir
+/home/augur/BigO/parser-c/build/CMakeFiles/ts-c.dir
+/home/augur/BigO/parser-c/build/CMakeFiles/parser.dir
+/home/augur/BigO/parser-c/build/CMakeFiles/edit_cache.dir
+/home/augur/BigO/parser-c/build/CMakeFiles/rebuild_cache.dir

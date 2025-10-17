@@ -24,7 +24,7 @@ static char *substr(const char *src, uint32_t start, uint32_t end) {
 //extract identifier text for call_expression's 'function' field
 static char *extract_call_name(TSNode call_node, const char *source) {
 	TSNode fn = ts_node_child_by_field_name(call_node, "function", 8);
-	if (ts_node_is_null(fun)) return NULL;
+	if (ts_node_is_null(fn)) return NULL;
 	uint32_t s = ts_node_start_byte(fn);
 	uint32_t e = ts_node_end_byte(fn);
 
@@ -38,7 +38,7 @@ static void traverse_collect(TSNode node, const char *source, json_t *loops, jso
 	if(strcmp(type, "for_statement") == 0) {
 		json_t *obj = json_object();
 		json_object_set_new(obj, "kind", json_string("for"));
-		json_object_set_new(obj, "bound", json+string("n"));
+		json_object_set_new(obj, "bound", json_string("n"));
 		json_array_append_new(loops, obj);
 	} else if (strcmp(type, "while_statement") == 0) {
 		json_t *obj = json_object();;
@@ -69,10 +69,10 @@ parse_result parse_code(const char *language, const char *code) {
 	json_t *ast = json_object();
 	json_t *summary = json_object();
 	json_t *loops = json_array();
-	json_t *calls - json_array();
+	json_t *calls = json_array();
 
 	//ast data
-	json_object_set_new(ast, "language", jsono_string(language ? language : "unkown"));
+	json_object_set_new(ast, "language", json_string(language ? language : "unkown"));
 	json_object_set_new(ast, "rootType", json_string("unknown"));
 
 	if(!language || !code || code[0] == '\0') {
@@ -109,7 +109,7 @@ parse_result parse_code(const char *language, const char *code) {
 
 void free_parse_result(parse_result *r) {
 	if(!r) return;
-	if(r->ast_json_ json_decref(r->ast_json);
+	if(r->ast_json) json_decref(r->ast_json);
 			if(r->summary_json) json_decref(r->summary_json);
 			r->ast_json == NULL;
 			r->summary_json = NULL;
