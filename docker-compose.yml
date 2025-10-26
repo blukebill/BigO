@@ -1,0 +1,19 @@
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - parser-c
+
+  parser-c:
+    build: ./parser-c
+    ports:
+      - "7001:7001"
+    command: ./parser
+
+  analyzer:
+    build: ./analyzer
+    ports:
+      - "7100:7100"

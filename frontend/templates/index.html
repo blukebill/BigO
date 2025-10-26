@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+  <title>Big-O Algorithm Analyzer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background-color: #f7f7f7;
+    }
+    h1 { color: #333; }
+    textarea {
+      width: 90%;
+      height: 300px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    pre {
+      background-color: #fff;
+      border: 1px solid #ccc;
+      padding: 15px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .output-container {
+      display: flex;
+      gap: 40px;
+      margin-top: 20px;
+    }
+    .output-box {
+      flex: 1;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-top: 0;
+      color: #444;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Big-O Algorithm Analyzer</h1>
+
+  <form method="POST">
+    <textarea name="code" placeholder="Paste your C code here...">{{ code }}</textarea><br><br>
+    <input type="submit" value="Analyze">
+  </form>
+
+  {% if ast or analysis %}
+  <div class="output-container">
+    {% if ast %}
+    <div class="output-box">
+      <h2>AST Output</h2>
+      <pre>
+{% if ast is string %}
+{{ ast }}
+{% else %}
+{{ ast | tojson(indent=2) }}
+{% endif %}
+      </pre>
+    </div>
+    {% endif %}
+
+    {% if analysis %}
+    <div class="output-box">
+      <h2>Complexity Analysis</h2>
+      <pre>
+{% if analysis is string %}
+{{ analysis }}
+{% else %}
+{{ analysis | tojson(indent=2) }}
+{% endif %}
+      </pre>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</body>
+</html>

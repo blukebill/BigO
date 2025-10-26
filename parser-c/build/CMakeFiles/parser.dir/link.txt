@@ -1,1 +1,0 @@
-/usr/bin/cc CMakeFiles/parser.dir/main.c.o CMakeFiles/parser.dir/http.c.o CMakeFiles/parser.dir/json.c.o CMakeFiles/parser.dir/parse.c.o -o parser  libtree-sitter.a libts-c.a /usr/lib/x86_64-linux-gnu/libjansson.so 

@@ -1,0 +1,11 @@
+{
+  "summary": {
+    "recurrence": { "a": 2, "b": 2, "f": "1" },
+    "functions": [
+      { "name": "recurseConstant", "is_recursive": true }
+    ],
+    "loops": []
+  }
+}
+
+
