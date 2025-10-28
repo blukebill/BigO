@@ -1,11 +1,17 @@
-{
-  "summary": {
-    "recurrence": { "a": 2, "b": 2, "f": "1" },
-    "functions": [
-      { "name": "recurseConstant", "is_recursive": true }
-    ],
-    "loops": []
-  }
+void matmul(const int *A, const int *B, int *C, int n) {
+    for (int i = 0; i < n; ++i)
+        for (int j = 0; j < n; ++j) {
+            long long s = 0;
+            for (int k = 0; k < n; ++k) s += (long long)A[i*n + k] * B[k*n + j];
+            C[i*n + j] = (int)s;
+        }
 }
 
+int bsearch_rec(const int *a, int l, int r, int key) {
+    if (l > r) return -1;
+    int m = l + (r - l) / 2;
+    if (a[m] == key) return m;
+    if (a[m] > key) return bsearch_rec(a, l, m-1, key);
+    return bsearch_rec(a, m+1, r, key);
+}
 
